@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/menu_main_connect"
+        android:orderInCategory="101"
+        android:title="@string/menu_main_connect" />
+    <item
+        android:id="@+id/menu_main_disconnect"
+        android:orderInCategory="102"
+        android:title="@string/menu_main_disconnect" />
+    <item
+        android:id="@+id/menu_main_accept_connection"
+        android:orderInCategory="103"
+        android:title="@string/menu_main_accept_connection" />
+    <item
+        android:id="@+id/menu_main_stop_listening"
+        android:orderInCategory="104"
+        android:title="@string/menu_main_stop_listening"/>
+    <item
+        android:id="@+id/menu_main_clear_connection"
+        android:orderInCategory="105"
+        android:title="@string/menu_main_clear_conversation" />
+    <item
+        android:id="@+id/menu_main_about"
+        android:orderInCategory="106"
+        android:title="@string/menu_main_about" />
+
+</menu>
