@@ -192,6 +192,7 @@ public class ScanActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int reqCode, int resCode, Intent data) {
+        super.onActivityResult(reqCode, resCode, data);
         Log.d(TAG, "onActivityResult");
         initializer.onActivityResult(reqCode, resCode, data); // delegate
     }

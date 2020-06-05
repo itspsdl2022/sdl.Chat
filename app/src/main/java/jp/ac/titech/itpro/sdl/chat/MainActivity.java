@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @Override
-        public void handleMessage(Message msg) {
+        public void handleMessage(@NonNull Message msg) {
             Log.d(TAG, "handleMessage");
             MainActivity activity = ref.get();
             if (activity == null) {
@@ -212,6 +212,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onActivityResult(int reqCode, int resCode, Intent data) {
+        super.onActivityResult(reqCode, resCode, data);
         Log.d(TAG, "onActivityResult: reqCode=" + reqCode + " resCode=" + resCode);
         initializer.onActivityResult(reqCode, resCode, data); // delegate
         if (agent != null) {
