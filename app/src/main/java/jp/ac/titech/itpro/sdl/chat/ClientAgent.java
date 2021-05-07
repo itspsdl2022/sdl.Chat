@@ -37,7 +37,7 @@ class ClientAgent extends Agent {
                 activity.setState(MainActivity.State.Disconnected);
                 return;
             }
-            connect1((BluetoothDevice) data.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
+            connect1(data.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
         }
     }
 
@@ -49,9 +49,10 @@ class ClientAgent extends Agent {
     }
 
     private static class ClientTask extends AsyncTask<BluetoothDevice, Void, BluetoothSocket> {
-        private WeakReference<ClientAgent> ref;
+        private final WeakReference<ClientAgent> ref;
 
         ClientTask(ClientAgent client) {
+            super();
             ref = new WeakReference<>(client);
         }
 

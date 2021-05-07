@@ -60,8 +60,9 @@ class ServerAgent extends Agent {
 
     private static class ServerTask extends AsyncTask<BluetoothAdapter, Void, BluetoothSocket> {
         private BluetoothServerSocket serverSocket;
-        private WeakReference<ServerAgent> ref;
+        private final WeakReference<ServerAgent> ref;
         ServerTask(ServerAgent server) {
+            super();
             ref = new WeakReference<>(server);
         }
 

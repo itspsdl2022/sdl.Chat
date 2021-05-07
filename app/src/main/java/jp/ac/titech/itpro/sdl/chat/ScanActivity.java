@@ -1,9 +1,9 @@
 package jp.ac.titech.itpro.sdl.chat;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,7 +12,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -85,27 +84,21 @@ public class ScanActivity extends AppCompatActivity {
             }
         };
         devicesView.setAdapter(devicesAdapter);
-        devicesView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
-                final BluetoothDevice device = (BluetoothDevice) parent.getItemAtPosition(pos);
-                new AlertDialog.Builder(ScanActivity.this)
-                        .setTitle(caption(device))
-                        .setMessage(R.string.alert_connection_confirmation)
-                        .setCancelable(false)
-                        .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                discoverer.stopScan();
-                                Intent data = new Intent();
-                                data.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-                                ScanActivity.this.setResult(Activity.RESULT_OK, data);
-                                ScanActivity.this.finish();
-                            }
-                        })
-                        .setNegativeButton(android.R.string.no, null)
-                        .show();
-            }
+        devicesView.setOnItemClickListener((parent, view, pos, id) -> {
+            final BluetoothDevice device = (BluetoothDevice) parent.getItemAtPosition(pos);
+            new AlertDialog.Builder(ScanActivity.this)
+                    .setTitle(caption(device))
+                    .setMessage(R.string.alert_connection_confirmation)
+                    .setCancelable(false)
+                    .setPositiveButton(android.R.string.yes, (dialog, which) -> {
+                        discoverer.stopScan();
+                        Intent data = new Intent();
+                        data.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+                        ScanActivity.this.setResult(Activity.RESULT_OK, data);
+                        ScanActivity.this.finish();
+                    })
+                    .setNegativeButton(android.R.string.no, null)
+                    .show();
         });
 
         // defines how to initialize the bluetooth adapter
@@ -175,6 +168,7 @@ public class ScanActivity extends AppCompatActivity {
         return true;
     }
 
+    @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         Log.d(TAG, "onOpeionsItemSelected");

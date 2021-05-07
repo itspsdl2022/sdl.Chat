@@ -1,5 +1,6 @@
 package jp.ac.titech.itpro.sdl.chat;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
@@ -13,7 +14,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -96,16 +96,13 @@ public class MainActivity extends AppCompatActivity {
         logview = findViewById(R.id.main_logview);
         logview.setAdapter(chatLogAdapter);
         final DateFormat fmt = DateFormat.getDateTimeInstance();
-        logview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
-                ChatMessage msg = (ChatMessage) parent.getItemAtPosition(pos);
-                new AlertDialog.Builder(MainActivity.this)
-                        .setTitle(getString(R.string.msg_title, msg.seq, msg.sender))
-                        .setMessage(getString(R.string.msg_content, msg.content, fmt.format(new Date(msg.time))))
-                        .setPositiveButton(android.R.string.ok, null)
-                        .show();
-            }
+        logview.setOnItemClickListener((parent, view, pos, id) -> {
+            ChatMessage msg = (ChatMessage) parent.getItemAtPosition(pos);
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle(getString(R.string.msg_title, msg.seq, msg.sender))
+                    .setMessage(getString(R.string.msg_content, msg.content, fmt.format(new Date(msg.time))))
+                    .setPositiveButton(android.R.string.ok, null)
+                    .show();
         });
 
         setState(State.Initializing);
@@ -126,6 +123,7 @@ public class MainActivity extends AppCompatActivity {
         WeakReference<MainActivity> ref;
 
         CommHandler(MainActivity activity) {
+            super();
             ref = new WeakReference<>(activity);
         }
 
@@ -177,6 +175,7 @@ public class MainActivity extends AppCompatActivity {
         return true;
     }
 
+    @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         Log.d(TAG, "onOptionsItemSelected");
