@@ -1,10 +1,14 @@
 package jp.ac.titech.itpro.sdl.chat;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Message;
 import android.os.Bundle;
@@ -22,15 +26,20 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import java.lang.ref.WeakReference;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 import jp.ac.titech.itpro.sdl.chat.message.ChatMessage;
@@ -38,6 +47,21 @@ import jp.ac.titech.itpro.sdl.chat.message.ChatMessage;
 public class MainActivity extends AppCompatActivity {
     private final static String TAG = MainActivity.class.getSimpleName();
     public final static UUID SPP_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+
+    private final static String[] PERMISSIONS_30 = {
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+    };
+
+    @RequiresApi(api = Build.VERSION_CODES.S)
+    private final static String[] PERMISSIONS = {
+            Manifest.permission.BLUETOOTH_SCAN,
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.BLUETOOTH_CONNECT,
+            Manifest.permission.BLUETOOTH_ADVERTISE,
+    };
+
+    private final String[] permissions = Build.VERSION.SDK_INT > 30 ? PERMISSIONS : PERMISSIONS_30;
 
     private TextView status;
     private ProgressBar progress;
@@ -62,9 +86,9 @@ public class MainActivity extends AppCompatActivity {
     private int messageSeq = 0;
     private Agent agent;
     private SoundPlayer soundPlayer;
-    private BluetoothInitializer initializer;
 
     @Override
+    @SuppressLint("MissingPermission")
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate");
@@ -105,19 +129,44 @@ public class MainActivity extends AppCompatActivity {
                     .show();
         });
 
-        setState(State.Initializing);
-
         soundPlayer = new SoundPlayer(this);
 
-        initializer = new BluetoothInitializer(this) {
-            @Override
-            protected void onReady(BluetoothAdapter adapter) {
-                MainActivity.this.adapter = adapter;
-                setState(State.Disconnected);
-            }
-        };
-        initializer.initialize();
+        adapter = BluetoothAdapter.getDefaultAdapter();
+        if (adapter == null) {
+            Toast.makeText(this, R.string.toast_bluetooth_not_supported, Toast.LENGTH_SHORT).show();
+            finish();
+            return;
+        }
+        if (adapter.isEnabled()) {
+            permissionRequester.launch(permissions);
+        } else {
+            Intent intent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            bluetoothEnabler.launch(intent);
+        }
     }
+
+    ActivityResultLauncher<String[]> permissionRequester =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), states -> {
+                for (Map.Entry<String, Boolean> s : states.entrySet()) {
+                    if (!s.getValue()) {
+                        String text = getString(R.string.toast_scanning_requires_permission, s.getKey());
+                        Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                }
+                setState(State.Disconnected);
+                invalidateOptionsMenu();
+            });
+
+    ActivityResultLauncher<Intent> bluetoothEnabler = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(),
+            result -> {
+                if (result.getResultCode() != Activity.RESULT_OK) {
+                    String text = getString(R.string.toast_bluetooth_disabled);
+                    Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
+                } else {
+                    permissionRequester.launch(permissions);
+                }
+            });
 
     private static class CommHandler extends Handler {
         WeakReference<MainActivity> ref;
@@ -168,10 +217,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onPrepareOptionsMenu(Menu menu) {
         Log.d(TAG, "onPrepareOptionsMenu");
-        menu.findItem(R.id.menu_main_connect).setVisible(state == State.Disconnected);
-        menu.findItem(R.id.menu_main_disconnect).setVisible(state == State.Connected);
-        menu.findItem(R.id.menu_main_accept_connection).setVisible(state == State.Disconnected);
-        menu.findItem(R.id.menu_main_stop_listening).setVisible(state == State.Waiting);
+        if (ActivityCompat.checkSelfPermission(this, permissions[0]) != PackageManager.PERMISSION_GRANTED) {
+            menu.findItem(R.id.menu_main_connect).setVisible(false);
+            menu.findItem(R.id.menu_main_disconnect).setVisible(false);
+            menu.findItem(R.id.menu_main_accept_connection).setVisible(false);
+            menu.findItem(R.id.menu_main_stop_listening).setVisible(false);
+        } else {
+            menu.findItem(R.id.menu_main_connect).setVisible(state == State.Disconnected);
+            menu.findItem(R.id.menu_main_disconnect).setVisible(state == State.Connected);
+            menu.findItem(R.id.menu_main_accept_connection).setVisible(state == State.Disconnected);
+            menu.findItem(R.id.menu_main_stop_listening).setVisible(state == State.Waiting);
+        }
         return true;
     }
 
@@ -213,12 +269,12 @@ public class MainActivity extends AppCompatActivity {
     public void onActivityResult(int reqCode, int resCode, Intent data) {
         super.onActivityResult(reqCode, resCode, data);
         Log.d(TAG, "onActivityResult: reqCode=" + reqCode + " resCode=" + resCode);
-        initializer.onActivityResult(reqCode, resCode, data); // delegate
         if (agent != null) {
             agent.onActivityResult(reqCode, resCode, data); // delegate
         }
     }
 
+    @SuppressLint("MissingPermission")
     public void onClickSendButton(View v) {
         Log.d(TAG, "onClickSendButton");
 

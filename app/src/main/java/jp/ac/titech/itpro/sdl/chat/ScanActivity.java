@@ -36,7 +36,6 @@ public class ScanActivity extends AppCompatActivity {
     private ArrayList<BluetoothDevice> devices = null;
     private ArrayAdapter<BluetoothDevice> devicesAdapter;
 
-    private BluetoothInitializer initializer;
     private BluetoothDeviceDiscoverer discoverer;
 
     private enum State {
@@ -46,6 +45,9 @@ public class ScanActivity extends AppCompatActivity {
     }
     private State state = State.Initializing;
 
+    private BluetoothAdapter adapter;
+
+    @SuppressLint("MissingPermission")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -65,6 +67,7 @@ public class ScanActivity extends AppCompatActivity {
 
         devicesAdapter = new ArrayAdapter<BluetoothDevice>(this, 0, devices) {
             @Override
+            @SuppressLint("MissingPermission")
             public @NonNull
             View getView(int pos, @Nullable View view, @NonNull ViewGroup parent) {
                 if (view == null) {
@@ -101,18 +104,8 @@ public class ScanActivity extends AppCompatActivity {
                     .show();
         });
 
-        // defines how to initialize the bluetooth adapter
-        initializer = new BluetoothInitializer(this) {
-            @Override
-            void onReady(BluetoothAdapter adapter) {
-                // add bonded devices
-                for (BluetoothDevice device : adapter.getBondedDevices()) {
-                    devicesAdapter.add(device);
-                }
-                devicesAdapter.notifyDataSetChanged();
-                setState(State.Stopped);
-            }
-        };
+        // assumes that the adapter is enabled here
+        adapter = BluetoothAdapter.getDefaultAdapter();
 
         // defines how to discover new devices
         discoverer = new BluetoothDeviceDiscoverer(this) {
@@ -136,7 +129,12 @@ public class ScanActivity extends AppCompatActivity {
             }
         };
 
-        initializer.initialize();
+        // add bonded devices
+        for (BluetoothDevice device : adapter.getBondedDevices()) {
+            devicesAdapter.add(device);
+        }
+        devicesAdapter.notifyDataSetChanged();
+        setState(State.Stopped);
     }
 
     @Override
@@ -171,10 +169,10 @@ public class ScanActivity extends AppCompatActivity {
     @SuppressLint("NonConstantResourceId")
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Log.d(TAG, "onOpeionsItemSelected");
+        Log.d(TAG, "onOptionsItemSelected");
         switch (item.getItemId()) {
             case R.id.menu_scan_scan:
-                discoverer.startScan(initializer.getAdapter());
+                discoverer.startScan(adapter);
                 return true;
             case R.id.menu_scan_stop:
                 discoverer.stopScan();
@@ -182,19 +180,6 @@ public class ScanActivity extends AppCompatActivity {
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    @Override
-    public void onActivityResult(int reqCode, int resCode, Intent data) {
-        super.onActivityResult(reqCode, resCode, data);
-        Log.d(TAG, "onActivityResult");
-        initializer.onActivityResult(reqCode, resCode, data); // delegate
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int reqCode, @NonNull String[] permissions, @NonNull int[] grants) {
-        Log.d(TAG, "onRequestPermissionsResult");
-        discoverer.onRequestPermissionsResult(reqCode, permissions, grants); // delegate
     }
 
     private void setState(State state) {
@@ -213,6 +198,7 @@ public class ScanActivity extends AppCompatActivity {
         invalidateOptionsMenu();
     }
 
+    @SuppressLint("MissingPermission")
     static String caption(BluetoothDevice device) {
         String name = device.getName();
         return name == null ? "(no name)" : name;

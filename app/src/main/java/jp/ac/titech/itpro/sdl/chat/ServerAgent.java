@@ -1,5 +1,6 @@
 package jp.ac.titech.itpro.sdl.chat;
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
@@ -30,6 +31,7 @@ class ServerAgent extends Agent {
         super(activity, handler);
     }
 
+    @SuppressLint("MissingPermission")
     void start(BluetoothAdapter adapter) {
         Log.d(TAG, "start");
         this.adapter = adapter;
@@ -67,6 +69,7 @@ class ServerAgent extends Agent {
         }
 
         @Override
+        @SuppressLint("MissingPermission")
         protected BluetoothSocket doInBackground(BluetoothAdapter... params) {
             Log.d(TAG, "doInBackground");
             BluetoothAdapter adapter = params[0];
